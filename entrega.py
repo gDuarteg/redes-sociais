@@ -6,14 +6,6 @@ from scipy import stats
 from unidecode import unidecode
 
 # https://api.rawg.io/docs/#operation/games_list
-#
-# Objetivo deste código: nós são artistas e arestas são baseadas
-# na API de "related artists". Como não há tempo de baixar todos
-# os artistas do Spotify inteiro, partimos de uma "raiz" inicial
-# e fazemos uma "bola de neve" a partir dessa raiz com recursão.
-# Ou seja, pegamos a raiz (0 níveis), os vizinhos da raiz (1 nível),
-# os vizinhos dos vizinhos da raiz (2 níveis) e assim em diante.
-
 
 # game_nodes = {
 #     id: {name: name, list: [l]},
@@ -180,10 +172,12 @@ def main() -> None:
     x_platforms = []
     y_rv = []
     gen_x_y(rawg_data, x_tag, x_platforms, y_rv)
-    
-    t2, p2 = stats.ttest_ind(x_tag, y_rv)
-    print("t = " + str(t2))
-    print("p = " + str(p2))
+
+    # nao esta funcionando o teste-t
+    # motivo: os x's sao uma lista que contem varias outras dentro.
+    #t2, p2 = stats.ttest_ind(x_tag, y_rv)
+    #print("t = " + str(t2))
+    #print("p = " + str(p2))
 
 if __name__ == "__main__":
     main()
