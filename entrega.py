@@ -11,27 +11,6 @@ import matplotlib.pyplot as plt
 
 # https://api.rawg.io/docs/#operation/games_list
 
-# game_nodes = {
-#     id: {name: name, list: [l]},
-#     id: {name: name, list: [l]},
-#     id: {name: name, list: [l]}
-# }
-
-# game_edges = {
-#     id: { 
-#           l : peso,
-#           l : peso,
-#         },
-#     id: { 
-#           l : peso,
-#           l : peso,
-#         },
-#     id: { 
-#           l : peso,
-#           l : peso,
-#         },
-# }
-
 def get_rawg_api_endpoint(endpoint, conn, h) -> str:
     conn.request("GET", endpoint, headers=h)
     return loads(conn.getresponse().read())
@@ -138,49 +117,74 @@ def betweeness_network(network):
     network.scale_nodes_size(bc)
     network.draw()
 
+    return bc
+
 def degree_network(network):
     dc = nx.degree_centrality(network)
     network.scale_nodes_size(dc)
     network.draw()
 
+    return dc
+
 def gen_x_y(data, x1, x2, y):
+    dict_tags = {}
+    x1_old = []
+
     for game in data["results"]:
         lx1 = []
-        lx2 = []
+        lx2 = 0
 
-        for game_tag in game["tags"]: lx1 += [game_tag["slug"]]
+        for i in game["platforms"]: lx2 += 1
 
-        for game_platform in game["platforms"]: lx2 += [game_platform["platform"]["slug"]]
+        for game_tag in game["tags"]: 
+            lx1 += [game_tag["slug"]]
+            dict_tags[game_tag["slug"]] = dict_tags[game_tag["slug"]] + 1 if game_tag["slug"] in dict_tags.keys() else 1
 
-        x1 += [lx1]
+        x1_old += [lx1]
         x2 += [lx2]
         y += [game["rating"]]
 
-def unique(lst):
-    l = []
+    for game in x1_old:
+        game_count = 0
 
-    for lis in lst:
-        for category in lis:
-            if category not in l:
-                l += [category]
-    
-    return l
-
-def one_hot_encoding(element, lists):
-    one_hot_list = []
-    for lis in lists:
-        if element in lis: one_hot_list += [1]
-        else: one_hot_list += [0]
-
-    return one_hot_list
-
-def gen_df(x_tag, x_platforms, y_rv):
-    x_tag_unique = unique(x_tag)
-    d = {"ratings" : y_rv}
-    
-    for category in x_tag_unique:
-        d[category] = one_hot_encoding(category, x_tag)
+        for tag in game:
+            game_count += dict_tags[tag]
         
+        x1 += [game_count]
+
+#### NOT USED #####
+
+# def unique(lst):
+#     l = []
+
+#     for lis in lst:
+#         for category in lis:
+#             if category not in l:
+#                 l += [category]
+    
+#     return l
+
+# def one_hot_encoding(element, lists):
+#     one_hot_list = []
+#     for lis in lists:
+#         if element in lis: one_hot_list += [1]
+#         else: one_hot_list += [0]
+
+#     return one_hot_list
+
+# def gen_df_old(x_tag, x_platforms, y_rv):
+#     x_tag_unique = unique(x_tag)
+#     d = {"ratings" : y_rv}
+    
+#     for category in x_tag_unique:
+#         d[category] = one_hot_encoding(category, x_tag)
+        
+#     return pd.DataFrame(data=d)
+
+###############
+
+def gen_df(x, y_rv):
+    d = { "ratings" : y_rv, "x": x }        
     return pd.DataFrame(data=d)
 
 def gen_nw_1(rawg_data, weight_nw_1):
@@ -195,49 +199,65 @@ def gen_nw_1(rawg_data, weight_nw_1):
     gen_game_nodes(game_nodes, rawg_data, 1)
     gen_game_edges(game_nodes, game_edges)
     build_gml(game_nodes, game_edges, 'rede1.gml', weight_nw_1)
-    
+    # plt.hist(weight_nw_1, bins=13, alpha=0.5)
+    # plt.title('Weight data for network 1')
+
     g = network_nx('rede1.gml')
 
     # C. calcular as métricas (chamar as funções vistas em aula ou outras);
-    betweeness_network(g)
-    degree_network(g)
+    b = betweeness_network(g)
+    d = degree_network(g)
 
-    return g
+    return g, b, d
 
-def gen_nw_2(rawg_data, weight_nw_2):
-    # Rede 2: Nos: jogos; Arestas: jogos que compartilham a mesma plataforma de jogo.
-    print("REDE 2")
-    print("Nós: jogos;")
-    print("Arestas: jogos que compartilham a mesma plataforma de jogo;")
+##### NOT USED ######
+
+# def gen_nw_2(rawg_data, weight_nw_2):
+#     # Rede 2: Nos: jogos; Arestas: jogos que compartilham a mesma plataforma de jogo.
+#     print("REDE 2")
+#     print("Nós: jogos;")
+#     print("Arestas: jogos que compartilham a mesma plataforma de jogo;")
      
-    game_nodes = {}
-    game_edges = {}
+#     game_nodes = {}
+#     game_edges = {}
 
-    gen_game_nodes(game_nodes, rawg_data, 2)
-    gen_game_edges(game_nodes, game_edges)
-    build_gml(game_nodes, game_edges, 'rede2.gml', weight_nw_2)
+#     gen_game_nodes(game_nodes, rawg_data, 2)
+#     gen_game_edges(game_nodes, game_edges)
+#     build_gml(game_nodes, game_edges, 'rede2.gml', weight_nw_2)
     
-    g = network_nx('rede2.gml')
+#     g = network_nx('rede2.gml')
 
-    # C. calcular as métricas (chamar as funções vistas em aula ou outras);
-    betweeness_network(g)
-    degree_network(g)
+#     # C. calcular as métricas (chamar as funções vistas em aula ou outras);
+#     betweeness_network(g)
+#     degree_network(g)
+#     return g
 
-    return g
+###########
+
+def linear_regression(df):
+    model = sm.OLS(df['ratings'], df['x'])
+    result = model.fit()
+    print(result.summary())
+
+def logistic_regression(df):
+    model = sm.Logit(df['ratings'], df['x'])
+    result = model.fit()
+    print(result.summary())
 
 def main() -> None:
     # A. obter os dados (chamadas de API, parsing de CSV, etc.);
 
-    rawg_connection, rawg_headers = rawg_api_connection()
-    gen_data(rawg_connection, rawg_headers)
+    #rawg_connection, rawg_headers = rawg_api_connection()
+    #gen_data(rawg_connection, rawg_headers)
 
     with open('aa.json', 'r') as file: rawg_data = loads(file.read())
 
     # B. construir a rede (escrever GML, carregar na NetworkX);
     weight_nw_1 = []
-    g = gen_nw_1(rawg_data, weight_nw_1)
-    plt.hist(weight_nw_1, bins=13, alpha=0.5)
-    plt.title('Weight data for network 1')
+    g, b, d = gen_nw_1(rawg_data, weight_nw_1)
+    b_new = []
+    for node in b: b_new += [b[node]]
+
     # weight_nw_2 = []
     # g = gen_nw_2(rawg_data, weight_nw_2)
 
@@ -246,17 +266,17 @@ def main() -> None:
     x_platforms = []
     y_rv = []
     gen_x_y(rawg_data, x_tag, x_platforms, y_rv)
-    df = gen_df(x_tag, x_platforms, y_rv)
+    print(x_platforms)
+    print(x_tag)
+    df_1 = gen_df(x_tag, y_rv)
+    df_2 = gen_df(x_platforms, y_rv)
+    df_3 = gen_df(b_new, y_rv)
 
-    for category in df:
-        if category != 'ratings':
-            print()
-            print(category)
-            print()
-            model = sm.OLS(df['ratings'], df[category])
-            result = model.fit()
-            print(result.summary())
-            print()
+    linear_regression(df_1)
+    linear_regression(df_2)
+    logistic_regression(df_1)
+    logistic_regression(df_2)
+    logistic_regression(df_3)
 
 if __name__ == "__main__":
     main()
